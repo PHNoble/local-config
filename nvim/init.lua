@@ -31,6 +31,12 @@ dofile(vim.g.base46_cache .. "statusline")
 
 require "options"
 require "nvchad.autocmds"
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+  pattern = { "docker-compose*.yml", "docker-compose*.yaml" },
+  callback = function()
+    vim.bo.filetype = "yaml.docker-compose"
+  end,
+})
 
 vim.schedule(function()
   require "mappings"

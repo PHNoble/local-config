@@ -1,7 +1,7 @@
 return {
   {
     "stevearc/conform.nvim",
-    -- event = 'BufWritePre', -- uncomment for format on save
+    event = 'BufWritePre', -- uncomment for format on save
     opts = require "configs.conform",
   },
   {
@@ -38,18 +38,16 @@ return {
       })
     end,
   },
-
-  -- These are some examples, uncomment them if you want to see them work!
   {
     "neovim/nvim-lspconfig",
+    event={"BufReadPre", "BufNewFile"},
     config = function()
-      require "configs.lspconfig"
+      require("configs.lspconfig").setup()
     end,
   },
 
   -- test new blink
-  -- { import = "nvchad.blink.lazyspec" },
-
+  { import = "nvchad.blink.lazyspec" },
   {
   	"nvim-treesitter/nvim-treesitter",
   	opts = {
