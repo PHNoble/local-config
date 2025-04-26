@@ -19,6 +19,11 @@ return {
     end,
   },
   {
+    "sindrets/diffview.nvim",
+    dependencies = "nvim-lua/plenary.nvim",
+    cmd = { "DiffviewOpen", "DiffviewFileHistory" },
+  },
+  {
     "pmizio/typescript-tools.nvim",
     dependencies = { "nvim-lua/plenary.nvim" },
     ft = { "typescript", "typescriptreact", "javascript", "javascriptreact" },
