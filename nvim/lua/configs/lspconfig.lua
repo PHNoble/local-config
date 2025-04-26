@@ -12,6 +12,12 @@ M.setup = function()
   lspconfig.cssls.setup({})
 
   lspconfig.docker_compose_language_service.setup(vim.tbl_deep_extend("force", defaults or {}, docker_compose_opts))
+  lspconfig.rust_analyzer.setup({
+    cargo = { allFeatures = true},
+    checkOnSave = {
+      command = "clippy"
+    }
+  })
 end
 
 
