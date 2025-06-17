@@ -41,3 +41,4 @@ export NVM_DIR="$HOME/.nvm"
 
 export PATH=$HOME/opt/homebrew/Cellar/erlang/27.1.2/lib/erlang/erts-15.1.2/bin:$PATH
 export PATH=$HOME/opt/homebrew/bin:$PATH
+alias claude="/Users/pnoble/.claude/local/claude"

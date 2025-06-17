@@ -14,10 +14,11 @@ M.setup = function()
   lspconfig.docker_compose_language_service.setup(vim.tbl_deep_extend("force", defaults or {}, docker_compose_opts))
   lspconfig.rust_analyzer.setup({
     settings = {
-      ["rust-analyzer"] = {cargo = { allFeatures = true},
-      checkOnSave = {
-       command = "clippy"
-      }
+      ["rust-analyzer"] = {
+        cargo = { allFeatures = true },
+        checkOnSave = {
+          command = "clippy"
+        }
       }
     }
   })

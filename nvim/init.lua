@@ -41,3 +41,5 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 vim.schedule(function()
   require "mappings"
 end)
+
+vim.lsp.enable("eslint")
