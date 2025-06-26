@@ -22,3 +22,31 @@ map("n", "<leader>tf", "<cmd>TSToolsAddMissingImports<cr>", { desc = "Add missin
 map("n", "<leader>td", "<cmd>TSToolsGoToSourceDefinition<cr>", { desc = "Go to source definition"})
 map("n", "<leader>tR", "<cmd>TSToolsFileReferences<cr>", { desc = "Find file references"})
 map("n", "<leader>te", "<cmd>TSToolsRenameFile<cr>", { desc = "Rename file and update imports"})
+
+-- Diagnostic navigation
+map("n", "[d", vim.diagnostic.goto_prev, { desc = "Previous diagnostic" })
+map("n", "]d", vim.diagnostic.goto_next, { desc = "Next diagnostic" })
+map("n", "[e", function() vim.diagnostic.goto_prev({ severity = vim.diagnostic.severity.ERROR }) end, { desc = "Previous error" })
+map("n", "]e", function() vim.diagnostic.goto_next({ severity = vim.diagnostic.severity.ERROR }) end, { desc = "Next error" })
+
+-- Quickfix navigation
+map("n", "[q", "<cmd>cprevious<cr>", { desc = "Previous quickfix" })
+map("n", "]q", "<cmd>cnext<cr>", { desc = "Next quickfix" })
+
+-- Trouble keymaps
+map("n", "<leader>xx", "<cmd>Trouble diagnostics toggle<cr>", { desc = "Diagnostics (Trouble)" })
+map("n", "<leader>xX", "<cmd>Trouble diagnostics toggle filter.buf=0<cr>", { desc = "Buffer Diagnostics (Trouble)" })
+map("n", "<leader>xl", "<cmd>Trouble loclist toggle<cr>", { desc = "Location List (Trouble)" })
+map("n", "<leader>xq", "<cmd>Trouble qflist toggle<cr>", { desc = "Quickfix List (Trouble)" })
+
+-- UFO folding keymaps
+map("n", "zR", require("ufo").openAllFolds, { desc = "Open all folds" })
+map("n", "zM", require("ufo").closeAllFolds, { desc = "Close all folds" })
+map("n", "zr", require("ufo").openFoldsExceptKinds, { desc = "Open folds except kinds" })
+map("n", "zm", require("ufo").closeFoldsWith, { desc = "Close folds with" })
+map("n", "K", function()
+  local winid = require("ufo").peekFoldedLinesUnderCursor()
+  if not winid then
+    vim.lsp.buf.hover()
+  end
+end, { desc = "Peek fold or hover" })

@@ -5,20 +5,6 @@ return {
     opts = require('configs.conform')
   },
   {
-    "hrsh7th/nvim-cmp",
-    dependencies = {
-      "L3MON4D3/LuaSnip",
-      "saadparwaiz1/cmp_luasnip",
-      "hrsh7th/cmp-nvim-lsp",
-      "hrsh7th/cmp-buffer",
-      "hrsh7th/cmp-path",
-      "rafamadriz/friendly-snippets",
-    },
-    config = function()
-      require("configs.cmp")
-    end,
-  },
-  {
     "sindrets/diffview.nvim",
     dependencies = "nvim-lua/plenary.nvim",
     cmd = { "DiffviewOpen", "DiffviewFileHistory" },
@@ -71,6 +57,87 @@ return {
 
   -- test new blink
   { import = "nvchad.blink.lazyspec" },
+
+  -- Essential productivity plugins
+  {
+    "nvim-telescope/telescope-fzf-native.nvim",
+    build = "make",
+    dependencies = { "nvim-telescope/telescope.nvim" },
+    config = function()
+      require("telescope").load_extension("fzf")
+    end,
+  },
+  {
+    "kylechui/nvim-surround",
+    version = "*",
+    event = "VeryLazy",
+    config = function()
+      require("nvim-surround").setup()
+    end,
+  },
+  {
+    "folke/trouble.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    cmd = { "Trouble", "TroubleToggle" },
+    config = function()
+      require("trouble").setup({
+        auto_preview = false,
+        auto_fold = true,
+      })
+    end,
+  },
+  {
+    "kevinhwang91/nvim-ufo",
+    dependencies = "kevinhwang91/promise-async",
+    event = "BufReadPost",
+    config = function()
+      vim.o.foldcolumn = "1"
+      vim.o.foldlevel = 99
+      vim.o.foldlevelstart = 99
+      vim.o.foldenable = true
+
+      require("ufo").setup({
+        provider_selector = function(bufnr, filetype, buftype)
+          return { "lsp", "indent" }
+        end,
+      })
+    end,
+  },
+  {
+    "folke/flash.nvim",
+    event = "VeryLazy",
+    opts = {},
+    keys = {
+      { "s",     mode = { "n", "x", "o" }, function() require("flash").jump() end,              desc = "Flash" },
+      { "S",     mode = { "n", "x", "o" }, function() require("flash").treesitter() end,        desc = "Flash Treesitter" },
+      { "r",     mode = "o",               function() require("flash").remote() end,            desc = "Remote Flash" },
+      { "R",     mode = { "o", "x" },      function() require("flash").treesitter_search() end, desc = "Treesitter Search" },
+      { "<c-s>", mode = { "c" },           function() require("flash").toggle() end,            desc = "Toggle Flash Search" },
+    },
+  },
+  {
+    "coder/claudecode.nvim",
+    dependencies = { "folke/snacks.nvim" },
+    config = true,
+    keys = {
+      { "<leader>a",  nil,                              desc = "AI/Claude Code" },
+      { "<leader>ac", "<cmd>ClaudeCode<cr>",            desc = "Toggle Claude" },
+      { "<leader>af", "<cmd>ClaudeCodeFocus<cr>",       desc = "Focus Claude" },
+      { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
+      { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
+      { "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>",       desc = "Add current buffer" },
+      { "<leader>as", "<cmd>ClaudeCodeSend<cr>",        mode = "v",                 desc = "Send to Claude" },
+      {
+        "<leader>as",
+        "<cmd>ClaudeCodeTreeAdd<cr>",
+        desc = "Add file",
+        ft = { "NvimTree", "neo-tree", "oil" },
+      },
+      -- Diff management
+      { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
+      { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>",   desc = "Deny diff" },
+    },
+  },
   {
     "nvim-treesitter/nvim-treesitter",
     opts = {
@@ -126,4 +193,57 @@ return {
     }
   end,
 },
+  -- Enhanced git integration
+  {
+    "lewis6991/gitsigns.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    opts = {
+      signs = {
+        add = { text = "│" },
+        change = { text = "│" },
+        delete = { text = "󰍵" },
+        topdelete = { text = "‾" },
+        changedelete = { text = "~" },
+        untracked = { text = "│" },
+      },
+      on_attach = function(bufnr)
+        local gs = package.loaded.gitsigns
+
+        local function map(mode, l, r, opts)
+          opts = opts or {}
+          opts.buffer = bufnr
+          vim.keymap.set(mode, l, r, opts)
+        end
+
+        -- Navigation
+        map("n", "]h", function()
+          if vim.wo.diff then return "]h" end
+          vim.schedule(function() gs.next_hunk() end)
+          return "<Ignore>"
+        end, { expr = true, desc = "Next hunk" })
+
+        map("n", "[h", function()
+          if vim.wo.diff then return "[h" end
+          vim.schedule(function() gs.prev_hunk() end)
+          return "<Ignore>"
+        end, { expr = true, desc = "Previous hunk" })
+
+        -- Actions
+        map("n", "<leader>hs", gs.stage_hunk, { desc = "Stage hunk" })
+        map("n", "<leader>hr", gs.reset_hunk, { desc = "Reset hunk" })
+        map("v", "<leader>hs", function() gs.stage_hunk { vim.fn.line("."), vim.fn.line("v") } end,
+          { desc = "Stage hunk" })
+        map("v", "<leader>hr", function() gs.reset_hunk { vim.fn.line("."), vim.fn.line("v") } end,
+          { desc = "Reset hunk" })
+        map("n", "<leader>hS", gs.stage_buffer, { desc = "Stage buffer" })
+        map("n", "<leader>hu", gs.undo_stage_hunk, { desc = "Undo stage hunk" })
+        map("n", "<leader>hR", gs.reset_buffer, { desc = "Reset buffer" })
+        map("n", "<leader>hp", gs.preview_hunk, { desc = "Preview hunk" })
+        map("n", "<leader>hb", function() gs.blame_line { full = true } end, { desc = "Blame line" })
+        map("n", "<leader>tb", gs.toggle_current_line_blame, { desc = "Toggle blame" })
+        map("n", "<leader>hd", gs.diffthis, { desc = "Diff this" })
+        map("n", "<leader>hD", function() gs.diffthis("~") end, { desc = "Diff this ~" })
+      end,
+    },
+  },
 }
