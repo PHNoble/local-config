@@ -1,5 +1,8 @@
 iterm2/
-gh/
 graphite/
 .DS_Store
 .aws/
+zed/
+node_modules/
+yarn/
+uv/

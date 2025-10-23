@@ -1,0 +1,629 @@
+#!/bin/bash
+# inspired by dane: https://github.com/danerwilliams/dotScripts/blob/main/wt
+
+# wt - Manage git worktrees with tmux integration
+# Usage:
+#   wt                                    - Interactive worktree selection (default)
+#   wt ls                                 - List all worktrees
+#   wt create <branch-name> [base-branch] - Create new worktree branch
+#   wt root                               - Open main repo in tmux
+#   wt delete <branch-name|gemstone-name> - Delete worktree and branch
+
+set -e  # Exit on error
+
+# Global arrays for worktree data
+declare -a gemstone_list
+declare -a branch_list
+declare -a display_list
+
+# Array of precious gemstone names for worktree directories
+GEMSTONES=(
+    "diamond"
+    "ruby"
+    "sapphire"
+    "emerald"
+    "amethyst"
+    "topaz"
+    "opal"
+    "pearl"
+    "jade"
+    "garnet"
+    "aquamarine"
+    "citrine"
+    "tourmaline"
+    "peridot"
+    "moonstone"
+    "tanzanite"
+    "alexandrite"
+    "spinel"
+    "kunzite"
+    "morganite"
+)
+
+# Get color for a gemstone (foreground)
+get_gemstone_color() {
+    local gemstone="$1"
+    
+    case "$gemstone" in
+        "diamond")      echo "\033[38;2;185;242;255m" ;;  # Light blue (diamond)
+        "ruby")         echo "\033[38;2;224;17;95m" ;;    # Deep red
+        "sapphire")     echo "\033[38;2;15;82;186m" ;;    # Deep blue
+        "emerald")      echo "\033[38;2;80;200;120m" ;;   # Green
+        "amethyst")     echo "\033[38;2;153;102;204m" ;;  # Purple
+        "topaz")        echo "\033[38;2;255;200;124m" ;;  # Golden orange
+        "opal")         echo "\033[38;2;168;195;188m" ;;  # Opalescent teal
+        "pearl")        echo "\033[38;2;240;234;214m" ;;  # Pearl white
+        "jade")         echo "\033[38;2;0;168;107m" ;;    # Jade green
+        "garnet")       echo "\033[38;2;153;0;0m" ;;      # Dark red
+        "aquamarine")   echo "\033[38;2;127;255;212m" ;;  # Aqua blue
+        "citrine")      echo "\033[38;2;228;208;10m" ;;   # Yellow
+        "tourmaline")   echo "\033[38;2;255;105;180m" ;;  # Pink
+        "peridot")      echo "\033[38;2;230;255;0m" ;;    # Lime green
+        "moonstone")    echo "\033[38;2;192;192;192m" ;;  # Silver/gray
+        "tanzanite")    echo "\033[38;2;64;48;255m" ;;    # Blue-violet
+        "alexandrite")  echo "\033[38;2;142;68;173m" ;;   # Purple-red
+        "spinel")       echo "\033[38;2;255;0;127m" ;;    # Bright pink
+        "kunzite")      echo "\033[38;2;255;182;193m" ;;  # Light pink
+        "morganite")    echo "\033[38;2;255;192;203m" ;;  # Peach pink
+        *)              echo "\033[0m" ;;                  # Default/reset
+    esac
+}
+
+# Get background color for a gemstone
+get_gemstone_bg_color() {
+    local gemstone="$1"
+    
+    case "$gemstone" in
+        "diamond")      echo "\033[48;2;185;242;255m\033[38;2;0;0;0m" ;;  # Light blue bg, black text
+        "ruby")         echo "\033[48;2;224;17;95m\033[38;2;255;255;255m" ;;    # Deep red bg, white text
+        "sapphire")     echo "\033[48;2;15;82;186m\033[38;2;255;255;255m" ;;    # Deep blue bg, white text
+        "emerald")      echo "\033[48;2;80;200;120m\033[38;2;0;0;0m" ;;   # Green bg, black text
+        "amethyst")     echo "\033[48;2;153;102;204m\033[38;2;255;255;255m" ;;  # Purple bg, white text
+        "topaz")        echo "\033[48;2;255;200;124m\033[38;2;0;0;0m" ;;  # Golden orange bg, black text
+        "opal")         echo "\033[48;2;168;195;188m\033[38;2;0;0;0m" ;;  # Opalescent teal bg, black text
+        "pearl")        echo "\033[48;2;240;234;214m\033[38;2;0;0;0m" ;;  # Pearl white bg, black text
+        "jade")         echo "\033[48;2;0;168;107m\033[38;2;255;255;255m" ;;    # Jade green bg, white text
+        "garnet")       echo "\033[48;2;153;0;0m\033[38;2;255;255;255m" ;;      # Dark red bg, white text
+        "aquamarine")   echo "\033[48;2;127;255;212m\033[38;2;0;0;0m" ;;  # Aqua blue bg, black text
+        "citrine")      echo "\033[48;2;228;208;10m\033[38;2;0;0;0m" ;;   # Yellow bg, black text
+        "tourmaline")   echo "\033[48;2;255;105;180m\033[38;2;0;0;0m" ;;  # Pink bg, black text
+        "peridot")      echo "\033[48;2;230;255;0m\033[38;2;0;0;0m" ;;    # Lime green bg, black text
+        "moonstone")    echo "\033[48;2;192;192;192m\033[38;2;0;0;0m" ;;  # Silver/gray bg, black text
+        "tanzanite")    echo "\033[48;2;64;48;255m\033[38;2;255;255;255m" ;;    # Blue-violet bg, white text
+        "alexandrite")  echo "\033[48;2;142;68;173m\033[38;2;255;255;255m" ;;   # Purple-red bg, white text
+        "spinel")       echo "\033[48;2;255;0;127m\033[38;2;255;255;255m" ;;    # Bright pink bg, white text
+        "kunzite")      echo "\033[48;2;255;182;193m\033[38;2;0;0;0m" ;;  # Light pink bg, black text
+        "morganite")    echo "\033[48;2;255;192;203m\033[38;2;0;0;0m" ;;  # Peach pink bg, black text
+        *)              echo "\033[0m" ;;                  # Default/reset
+    esac
+}
+
+# ANSI color reset
+COLOR_RESET="\033[0m"
+
+# Get the main repository root (works from within worktrees too)
+get_main_repo_root() {
+    local git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null)
+    if [ -n "$git_common_dir" ]; then
+        # Get the parent directory of the common .git directory
+        echo "$(cd "$git_common_dir/.." && pwd)"
+    else
+        # Fallback to regular toplevel
+        git rev-parse --show-toplevel
+    fi
+}
+
+# Build worktree lists with formatting
+# Populates global arrays: gemstone_list, branch_list, display_list
+# Usage: build_worktree_lists worktree_base mapping_file
+build_worktree_lists() {
+    local worktree_base="$1"
+    local mapping_file="$2"
+    
+    # Get current worktree path to highlight it
+    local current_worktree=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+    
+    # Clear the arrays (using global variables)
+    gemstone_list=()
+    branch_list=()
+    display_list=()
+    
+    while IFS='=' read -r branch gemstone; do
+        if [ -d "$worktree_base/$gemstone" ]; then
+            gemstone_list+=("$gemstone")
+            branch_list+=("$branch")
+            
+            # Check if this is the current worktree
+            local worktree_path="$worktree_base/$gemstone"
+            local indicator="○"  # Empty circle
+            if [ "$current_worktree" = "$worktree_path" ]; then
+                indicator="●"  # Filled circle
+            fi
+            
+            # Get color for this gemstone
+            local color=$(get_gemstone_color "$gemstone")
+            display_list+=("${indicator} ${color}${gemstone}${COLOR_RESET} → $branch")
+        fi
+    done < "$mapping_file"
+}
+
+# Get a random available gemstone name
+get_available_gemstone() {
+    local worktree_base="$1"
+    local mapping_file="$worktree_base/.gemstone-mapping"
+    
+    # Build array of available gemstones
+    local -a available_gemstones=()
+    for gemstone in "${GEMSTONES[@]}"; do
+        if [ ! -d "$worktree_base/$gemstone" ]; then
+            available_gemstones+=("$gemstone")
+        fi
+    done
+    
+    # Check if any are available
+    if [ ${#available_gemstones[@]} -eq 0 ]; then
+        echo "Error: All gemstone names are in use! Please delete some worktrees first." >&2
+        exit 1
+    fi
+    
+    # Select a random gemstone from available ones
+    local random_index=$((RANDOM % ${#available_gemstones[@]}))
+    echo "${available_gemstones[$random_index]}"
+}
+
+# Get gemstone name for a branch
+get_gemstone_for_branch() {
+    local branch="$1"
+    local mapping_file="$2"
+    
+    if [ -f "$mapping_file" ]; then
+        grep "^$branch=" "$mapping_file" | cut -d'=' -f2
+    fi
+}
+
+# Get branch name for a gemstone
+get_branch_for_gemstone() {
+    local gemstone="$1"
+    local mapping_file="$2"
+    
+    if [ -f "$mapping_file" ]; then
+        grep "=$gemstone$" "$mapping_file" | cut -d'=' -f1
+    fi
+}
+
+# Save branch to gemstone mapping
+save_mapping() {
+    local branch="$1"
+    local gemstone="$2"
+    local mapping_file="$3"
+    
+    echo "$branch=$gemstone" >> "$mapping_file"
+}
+
+# Remove mapping
+remove_mapping() {
+    local branch="$1"
+    local mapping_file="$2"
+    
+    if [ -f "$mapping_file" ]; then
+        sed -i.bak "/^$branch=/d" "$mapping_file"
+        rm -f "$mapping_file.bak"
+    fi
+}
+
+# Interactive selection for worktrees using arrow keys
+# Returns the selected index, or exits if cancelled
+# Usage: select_worktree_interactive worktree_base mapping_file
+select_worktree_interactive() {
+    local worktree_base="$1"
+    local mapping_file="$2"
+    
+    # Build worktree lists using shared function
+    build_worktree_lists "$worktree_base" "$mapping_file"
+    
+    # Check if we found any worktrees
+    if [ ${#gemstone_list[@]} -eq 0 ]; then
+        echo "No active worktrees found." >&2
+        exit 0
+    fi
+    
+    local current=0
+    local num_items=${#display_list[@]}
+    local key=""
+    
+    # Function to render the menu
+    render_menu() {
+        # Clear screen and move to top
+        tput clear >&2
+        tput cup 0 0 >&2
+        
+        echo "Select a worktree (use ↑↓ arrows, Enter to select, q to quit):" >&2
+        echo "" >&2
+        
+        for i in "${!display_list[@]}"; do
+            if [ $i -eq $current ]; then
+                # Highlighted selection with gemstone color as background
+                local gemstone="${gemstone_list[$i]}"
+                local bg_color=$(get_gemstone_bg_color "$gemstone")
+                # Strip color codes from display for clean background
+                local clean_text=$(echo -e "${display_list[$i]}" | sed 's/\x1b\[[0-9;]*m//g')
+                echo -e "  ${bg_color}${clean_text}\033[0m" >&2
+            else
+                echo -e "  ${display_list[$i]}" >&2
+            fi
+        done
+        echo "" >&2
+    }
+    
+    # Hide cursor
+    tput civis >&2
+    
+    # Initial render
+    render_menu
+    
+    # Read arrow keys and enter
+    while true; do
+        # Read a single character
+        read -rsn1 key </dev/tty
+        
+        case "$key" in
+            $'\x1b')  # ESC sequence
+                read -rsn2 key </dev/tty  # Read the rest of the arrow key
+                case "$key" in
+                    '[A')  # Up arrow
+                        ((current--))
+                    if [ $current -lt 0 ]; then
+                        current=$((${#display_list[@]} - 1))
+                    fi
+                    render_menu
+                    ;;
+                '[B')  # Down arrow
+                    ((current++))
+                    if [ $current -ge ${#display_list[@]} ]; then
+                        current=0
+                    fi
+                    render_menu
+                    ;;
+                esac
+                ;;
+            '')  # Enter key
+                break
+                ;;
+            'q'|'Q')  # Quit
+                tput cnorm >&2
+                tput clear >&2
+                echo ""  # Return empty string
+                return 1  # Return error code
+                ;;
+        esac
+    done
+    
+    # Restore cursor and clear screen
+    tput cnorm >&2
+    tput clear >&2
+    
+    # Return the selected gemstone name
+    echo "${gemstone_list[$current]}"
+    return 0
+}
+
+# Open worktree in tmux with 3-pane layout
+open_in_tmux() {
+    local gemstone_name="$1"
+    local worktree_path="$2"
+    
+    # Start a new tmux session if not already in one, or create a new window if in tmux
+    if [ -z "$TMUX" ]; then
+        # Check if the "worktrees" session already exists
+        if tmux has-session -t "worktrees" 2>/dev/null; then
+            # Session exists, check if window with gemstone name exists
+            if tmux list-windows -t "worktrees" -F "#{window_name}" | grep -q "^${gemstone_name}$"; then
+                # Window exists, just attach and switch to it
+                tmux attach-session -t "worktrees"
+                tmux select-window -t "$gemstone_name"
+            else
+                # Create new window in existing session
+                tmux new-window -t "worktrees" -n "$gemstone_name" -c "$worktree_path"
+                tmux split-window -t "worktrees:$gemstone_name" -h -c "$worktree_path"
+                tmux split-window -t "worktrees:$gemstone_name" -v -c "$worktree_path"
+                tmux select-pane -t "worktrees:$gemstone_name.0"
+                tmux attach-session -t "worktrees"
+            fi
+        else
+            # Not in tmux, create new session with 3-pane layout
+            tmux new-session -d -s "worktrees" -n "$gemstone_name" -c "$worktree_path"
+            
+            # Split window vertically (left and right panes)
+            tmux split-window -h -c "$worktree_path"
+            
+            # Split the right pane horizontally
+            tmux split-window -v -c "$worktree_path"
+            
+            # Select the left pane (pane 0)
+            tmux select-pane -t 0
+            
+            # Attach to the session
+            tmux attach-session -t "worktrees"
+        fi
+    else
+        # Already in tmux, check if a window with this name exists
+        if tmux list-windows -F "#{window_name}" | grep -q "^${gemstone_name}$"; then
+            # Window exists, switch to it
+            tmux select-window -t "$gemstone_name"
+        else
+            # Window doesn't exist, create a new window with 3-pane layout
+            tmux new-window -n "$gemstone_name" -c "$worktree_path"
+            
+            # Split window vertically (left and right panes)
+            tmux split-window -h -c "$worktree_path"
+            
+            # Split the right pane horizontally
+            tmux split-window -v -c "$worktree_path"
+            
+            # Select the left pane (pane 0)
+            tmux select-pane -t 0
+        fi
+    fi
+}
+
+# Handle --help flag
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+    echo "Usage:"
+    echo "  wt                                     - Interactive worktree selection (default)"
+    echo "  wt ls                                  - List all worktrees"
+    echo "  wt create <branch-name> [base-branch]  - Create new worktree branch"
+    echo "  wt root                                - Open tmux window in main repo"
+    echo "  wt delete <branch-name|gemstone-name>  - Delete worktree and branch"
+    echo ""
+    echo "Arguments:"
+    echo "  base-branch - Optional branch to create from (defaults to current branch)"
+    echo ""
+    echo "Worktrees are created in the .worktrees/ subdirectory of your repository"
+    echo "using precious gemstone names (diamond, ruby, sapphire, etc.)."
+    echo "The mapping between branches and gemstones is tracked automatically."
+    echo ""
+    echo "You can delete worktrees by either branch name or gemstone name:"
+    echo "  wt delete feature-login  (by branch name)"
+    echo "  wt delete diamond        (by gemstone name)"
+    echo ""
+    echo "Initialization:"
+    echo "  If initialize-worktree.sh exists in the .worktrees/ directory,"
+    echo "  it will be executed after creating the new worktree."
+    exit 0
+fi
+
+# Get the repository root
+if ! git rev-parse --git-dir > /dev/null 2>&1; then
+    echo "Error: Not in a git repository"
+    exit 1
+fi
+
+REPO_ROOT=$(get_main_repo_root)
+WORKTREE_BASE="$REPO_ROOT/.worktrees"
+MAPPING_FILE="$WORKTREE_BASE/.gemstone-mapping"
+
+# Handle ls command (non-interactive list)
+if [ "$1" = "ls" ]; then
+    # Check if worktrees exist
+    if [ ! -f "$MAPPING_FILE" ] || [ ! -s "$MAPPING_FILE" ]; then
+        echo "No worktrees found."
+        exit 0
+    fi
+    
+    # Build worktree lists using shared function
+    build_worktree_lists "$WORKTREE_BASE" "$MAPPING_FILE"
+    
+    # Check if we found any worktrees
+    if [ ${#gemstone_list[@]} -eq 0 ]; then
+        echo "No active worktrees found."
+        exit 0
+    fi
+    
+    echo "Worktrees:"
+    echo ""
+    
+    # Print the display list
+    for item in "${display_list[@]}"; do
+        echo -e "  $item"
+    done
+    
+    exit 0
+fi
+
+# Handle interactive selection (default when no args provided)
+if [ $# -eq 0 ]; then
+    
+    # Check if worktrees exist
+    if [ ! -f "$MAPPING_FILE" ] || [ ! -s "$MAPPING_FILE" ]; then
+        echo "No worktrees found."
+        exit 0
+    fi
+    
+    # Get user selection (returns gemstone name)
+    GEMSTONE_NAME=$(select_worktree_interactive "$WORKTREE_BASE" "$MAPPING_FILE")
+    
+    # Check if user quit (empty gemstone name means quit)
+    if [ -z "$GEMSTONE_NAME" ]; then
+        exit 0
+    fi
+    
+    # Get the branch name for this gemstone
+    BRANCH_NAME=$(get_branch_for_gemstone "$GEMSTONE_NAME" "$MAPPING_FILE")
+    WORKTREE_PATH="$WORKTREE_BASE/$GEMSTONE_NAME"
+    
+    # Change to the worktree directory
+    cd "$WORKTREE_PATH"
+    
+    # Open in tmux with 3-pane layout
+    open_in_tmux "$GEMSTONE_NAME" "$WORKTREE_PATH"
+    
+    exit 0
+fi
+
+# Handle root command
+if [ "$1" = "root" ]; then
+    # Change to the main repository root
+    cd "$REPO_ROOT"
+    
+    # Open in tmux with 3-pane layout
+    open_in_tmux "root" "$REPO_ROOT"
+    
+    exit 0
+fi
+
+# Handle delete command
+if [ "$1" = "delete" ]; then
+    if [ $# -lt 2 ]; then
+        echo "Usage: wt delete <branch-name|gemstone-name>"
+        exit 1
+    fi
+
+    DELETE_ARG="$2"
+    
+    # Check if the argument is a gemstone name
+    GEMSTONE_NAME=""
+    BRANCH_NAME=""
+    
+    # First, check if it's a valid gemstone name in our array
+    for gemstone in "${GEMSTONES[@]}"; do
+        if [ "$DELETE_ARG" = "$gemstone" ]; then
+            # It's a gemstone name, look up the branch
+            GEMSTONE_NAME="$gemstone"
+            BRANCH_NAME=$(get_branch_for_gemstone "$GEMSTONE_NAME" "$MAPPING_FILE")
+            if [ -z "$BRANCH_NAME" ]; then
+                echo "Error: No branch found for gemstone '$GEMSTONE_NAME'"
+                exit 1
+            fi
+            break
+        fi
+    done
+    
+    # If not a gemstone, treat it as a branch name
+    if [ -z "$GEMSTONE_NAME" ]; then
+        BRANCH_NAME="$DELETE_ARG"
+        GEMSTONE_NAME=$(get_gemstone_for_branch "$BRANCH_NAME" "$MAPPING_FILE")
+        
+        if [ -z "$GEMSTONE_NAME" ]; then
+            echo "Error: No worktree found for branch '$BRANCH_NAME'"
+            exit 1
+        fi
+    fi
+    
+    WORKTREE_PATH="$WORKTREE_BASE/$GEMSTONE_NAME"
+
+    # Check if worktree exists
+    if [ ! -d "$WORKTREE_PATH" ]; then
+        echo "Error: Worktree not found at $WORKTREE_PATH"
+        exit 1
+    fi
+    
+    # Check if tmux window is open for this worktree
+    if command -v tmux &> /dev/null && tmux has-session -t "worktrees" 2>/dev/null; then
+        if tmux list-windows -t "worktrees" -F "#{window_name}" 2>/dev/null | grep -q "^${GEMSTONE_NAME}$"; then
+            echo "Error: Cannot delete worktree '$GEMSTONE_NAME' - tmux window is still open"
+            echo "Please close the tmux window first:"
+            echo "  tmux select-window -t worktrees:$GEMSTONE_NAME"
+            echo "  # Then close the window with 'exit' or Ctrl+D in all panes"
+            exit 1
+        fi
+    fi
+
+    # Deinitialize submodules if they exist
+    if [ -f "$WORKTREE_PATH/.gitmodules" ]; then
+        echo "Deinitializing submodules..."
+        (cd "$WORKTREE_PATH" && git submodule deinit --all -f)
+    fi
+
+    # Remove worktree (use --force to handle submodules)
+    echo "Removing worktree '$GEMSTONE_NAME' at $WORKTREE_PATH..."
+    git worktree remove --force "$WORKTREE_PATH"
+
+    # Delete branch
+    echo "Deleting branch '$BRANCH_NAME'..."
+    git branch -D "$BRANCH_NAME"
+    
+    # Remove mapping
+    remove_mapping "$BRANCH_NAME" "$MAPPING_FILE"
+
+    echo "Successfully deleted worktree '$GEMSTONE_NAME' and branch '$BRANCH_NAME'"
+    exit 0
+fi
+
+# Handle create command
+if [ "$1" = "create" ]; then
+    if [ $# -lt 2 ]; then
+        echo "Usage: wt create <branch-name> [base-branch]"
+        exit 1
+    fi
+    
+    BRANCH_NAME="$2"
+    BASE_BRANCH="${3:-}"  # Optional base branch
+else
+    # Unknown command
+    echo "Error: Unknown command '$1'"
+    echo ""
+    echo "Usage:"
+    echo "  wt                                     - Interactive worktree selection (default)"
+    echo "  wt ls                                  - List all worktrees"
+    echo "  wt create <branch-name> [base-branch]  - Create new worktree branch"
+    echo "  wt root                                - Open tmux window in main repo"
+    echo "  wt delete <branch-name|gemstone-name>  - Delete worktree and branch"
+    exit 1
+fi
+
+# Check if this branch already has a worktree
+EXISTING_GEMSTONE=$(get_gemstone_for_branch "$BRANCH_NAME" "$MAPPING_FILE")
+
+if [ -n "$EXISTING_GEMSTONE" ]; then
+    GEMSTONE_NAME="$EXISTING_GEMSTONE"
+    WORKTREE_PATH="$WORKTREE_BASE/$GEMSTONE_NAME"
+    echo "Worktree already exists for branch '$BRANCH_NAME' at $WORKTREE_PATH ($GEMSTONE_NAME)"
+else
+    # Create worktree base directory if needed
+    mkdir -p "$WORKTREE_BASE"
+    
+    # Get an available gemstone name
+    GEMSTONE_NAME=$(get_available_gemstone "$WORKTREE_BASE")
+    WORKTREE_PATH="$WORKTREE_BASE/$GEMSTONE_NAME"
+    
+    echo "Using gemstone name: $GEMSTONE_NAME"
+
+    # Check if branch already exists
+    if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+        # Create worktree for existing branch
+        echo "Branch '$BRANCH_NAME' exists. Creating worktree at $WORKTREE_PATH..."
+        git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
+    else
+        # Create the new branch and worktree
+        if [ -n "$BASE_BRANCH" ]; then
+            echo "Creating worktree at $WORKTREE_PATH from base branch '$BASE_BRANCH'..."
+            git worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" "$BASE_BRANCH"
+        else
+            echo "Creating worktree at $WORKTREE_PATH..."
+            git worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH"
+        fi
+
+        # Track with Graphite if available (only for new branches)
+        if command -v gt &> /dev/null; then
+            (cd "$WORKTREE_PATH" && gt branch track 2>/dev/null && echo "Branch tracked in Graphite")
+        fi
+    fi
+    
+    # Save the mapping
+    save_mapping "$BRANCH_NAME" "$GEMSTONE_NAME" "$MAPPING_FILE"
+
+    # Run initialization script if it exists
+    INIT_SCRIPT="$WORKTREE_BASE/initialize-worktree.sh"
+    if [ -f "$INIT_SCRIPT" ]; then
+        echo "Running initialization script..."
+        (cd "$WORKTREE_PATH" && bash "$INIT_SCRIPT")
+    fi
+fi
+
+# Change to the worktree directory
+cd "$WORKTREE_PATH"
+
+# Open in tmux with 3-pane layout
+open_in_tmux "$GEMSTONE_NAME" "$WORKTREE_PATH"
+
+echo "Created branch '$BRANCH_NAME' at $WORKTREE_PATH ($GEMSTONE_NAME) with 3-pane layout"
