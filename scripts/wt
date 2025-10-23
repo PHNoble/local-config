@@ -3,11 +3,12 @@
 
 # wt - Manage git worktrees with tmux integration
 # Usage:
-#   wt                                    - Interactive worktree selection (default)
-#   wt ls                                 - List all worktrees
-#   wt create <branch-name> [base-branch] - Create new worktree branch
-#   wt root                               - Open main repo in tmux
-#   wt delete <branch-name|gemstone-name> - Delete worktree and branch
+#   wt                                            - Interactive worktree selection (default)
+#   wt ls                                         - List all worktrees
+#   wt create <branch-name> [base-branch]         - Create new branch and worktree
+#   wt create --existing|-e <existing-branch>     - Create worktree from existing branch
+#   wt root                                       - Open main repo in tmux
+#   wt delete <branch-name|gemstone-name>         - Delete worktree and branch
 
 set -e  # Exit on error
 
@@ -111,6 +112,45 @@ get_main_repo_root() {
         # Fallback to regular toplevel
         git rev-parse --show-toplevel
     fi
+}
+
+# Ensure .worktrees directory is excluded in git
+ensure_worktrees_excluded() {
+    local repo_root="$1"
+    local git_dir="$repo_root/.git"
+    
+    # Handle worktree's .git file
+    if [ -f "$git_dir" ]; then
+        # This is a worktree, read the actual git dir location
+        git_dir=$(grep "gitdir:" "$git_dir" | cut -d' ' -f2)
+        # Get the common dir (main repo's .git)
+        git_dir=$(cd "$(dirname "$git_dir")" && git rev-parse --git-common-dir 2>/dev/null)
+    fi
+    
+    local exclude_file="$git_dir/info/exclude"
+    
+    # Create info directory if it doesn't exist
+    mkdir -p "$(dirname "$exclude_file")"
+    
+    # Check if .worktrees is already excluded
+    if [ -f "$exclude_file" ]; then
+        if grep -q "^/.worktrees$" "$exclude_file" 2>/dev/null; then
+            return 0  # Already excluded
+        fi
+    fi
+    
+    # Add .worktrees to exclude file with surrounding newlines
+    # Add leading newline if file exists and doesn't end with newline
+    if [ -f "$exclude_file" ] && [ -s "$exclude_file" ]; then
+        # Check if last character is a newline
+        if [ "$(tail -c 1 "$exclude_file" | wc -l)" -eq 0 ]; then
+            echo "" >> "$exclude_file"
+        fi
+        echo "" >> "$exclude_file"
+    fi
+    
+    echo "/.worktrees" >> "$exclude_file"
+    echo "" >> "$exclude_file"
 }
 
 # Build worktree lists with formatting
@@ -369,14 +409,16 @@ open_in_tmux() {
 # Handle --help flag
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Usage:"
-    echo "  wt                                     - Interactive worktree selection (default)"
-    echo "  wt ls                                  - List all worktrees"
-    echo "  wt create <branch-name> [base-branch]  - Create new worktree branch"
-    echo "  wt root                                - Open tmux window in main repo"
-    echo "  wt delete <branch-name|gemstone-name>  - Delete worktree and branch"
+    echo "  wt                                            - Interactive worktree selection (default)"
+    echo "  wt ls                                         - List all worktrees"
+    echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
+    echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
+    echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
     echo ""
     echo "Arguments:"
-    echo "  base-branch - Optional branch to create from (defaults to current branch)"
+    echo "  base-branch      - Optional branch to create from (defaults to current branch)"
+    echo "  --existing, -e   - Create worktree from an existing branch (must exist)"
     echo ""
     echo "Worktrees are created in the .worktrees/ subdirectory of your repository"
     echo "using precious gemstone names (diamond, ruby, sapphire, etc.)."
@@ -401,6 +443,9 @@ fi
 REPO_ROOT=$(get_main_repo_root)
 WORKTREE_BASE="$REPO_ROOT/.worktrees"
 MAPPING_FILE="$WORKTREE_BASE/.gemstone-mapping"
+
+# Ensure .worktrees is excluded from git
+ensure_worktrees_excluded "$REPO_ROOT"
 
 # Handle ls command (non-interactive list)
 if [ "$1" = "ls" ]; then
@@ -553,21 +598,36 @@ fi
 if [ "$1" = "create" ]; then
     if [ $# -lt 2 ]; then
         echo "Usage: wt create <branch-name> [base-branch]"
+        echo "   or: wt create --existing|-e <existing-branch>"
         exit 1
     fi
     
-    BRANCH_NAME="$2"
-    BASE_BRANCH="${3:-}"  # Optional base branch
+    # Check for --existing flag
+    EXISTING_BRANCH_MODE=false
+    if [ "$2" = "--existing" ] || [ "$2" = "-e" ]; then
+        EXISTING_BRANCH_MODE=true
+        if [ $# -lt 3 ]; then
+            echo "Error: --existing flag requires a branch name"
+            echo "Usage: wt create --existing|-e <existing-branch>"
+            exit 1
+        fi
+        BRANCH_NAME="$3"
+        BASE_BRANCH=""
+    else
+        BRANCH_NAME="$2"
+        BASE_BRANCH="${3:-}"  # Optional base branch
+    fi
 else
     # Unknown command
     echo "Error: Unknown command '$1'"
     echo ""
     echo "Usage:"
-    echo "  wt                                     - Interactive worktree selection (default)"
-    echo "  wt ls                                  - List all worktrees"
-    echo "  wt create <branch-name> [base-branch]  - Create new worktree branch"
-    echo "  wt root                                - Open tmux window in main repo"
-    echo "  wt delete <branch-name|gemstone-name>  - Delete worktree and branch"
+    echo "  wt                                            - Interactive worktree selection (default)"
+    echo "  wt ls                                         - List all worktrees"
+    echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
+    echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
+    echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
     exit 1
 fi
 
@@ -588,9 +648,19 @@ else
     
     echo "Using gemstone name: $GEMSTONE_NAME"
 
-    # Check if branch already exists
-    if git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+    # Check if we're in existing branch mode
+    if [ "$EXISTING_BRANCH_MODE" = true ]; then
+        # Verify the branch exists
+        if ! git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+            echo "Error: Branch '$BRANCH_NAME' does not exist"
+            echo "Use 'wt create $BRANCH_NAME' to create a new branch instead"
+            exit 1
+        fi
         # Create worktree for existing branch
+        echo "Creating worktree at $WORKTREE_PATH for existing branch '$BRANCH_NAME'..."
+        git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
+    elif git show-ref --verify --quiet "refs/heads/$BRANCH_NAME"; then
+        # Branch exists but --existing flag not used
         echo "Branch '$BRANCH_NAME' exists. Creating worktree at $WORKTREE_PATH..."
         git worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
     else
