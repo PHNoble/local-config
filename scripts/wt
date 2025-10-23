@@ -8,6 +8,7 @@
 #   wt create <branch-name> [base-branch]         - Create new branch and worktree
 #   wt create --existing|-e <existing-branch>     - Create worktree from existing branch
 #   wt root                                       - Open main repo in tmux
+#   wt rename <old-branch> <new-branch>           - Rename a branch and update mapping
 #   wt delete <branch-name|gemstone-name>         - Delete worktree and branch
 
 set -e  # Exit on error
@@ -414,6 +415,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
     echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
     echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt rename <old-branch> <new-branch>           - Rename a branch and update mapping"
     echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
     echo ""
     echo "Arguments:"
@@ -513,6 +515,49 @@ if [ "$1" = "root" ]; then
     # Open in tmux with 3-pane layout
     open_in_tmux "root" "$REPO_ROOT"
     
+    exit 0
+fi
+
+# Handle rename command
+if [ "$1" = "rename" ]; then
+    if [ $# -lt 3 ]; then
+        echo "Usage: wt rename <old-branch> <new-branch>"
+        exit 1
+    fi
+    
+    OLD_BRANCH_NAME="$2"
+    NEW_BRANCH_NAME="$3"
+    
+    # Look up the gemstone for the old branch
+    GEMSTONE_NAME=$(get_gemstone_for_branch "$OLD_BRANCH_NAME" "$MAPPING_FILE")
+    
+    if [ -z "$GEMSTONE_NAME" ]; then
+        echo "Error: No worktree found for branch '$OLD_BRANCH_NAME'"
+        exit 1
+    fi
+    
+    # Check if the old branch exists
+    if ! git show-ref --verify --quiet "refs/heads/$OLD_BRANCH_NAME"; then
+        echo "Error: Branch '$OLD_BRANCH_NAME' does not exist"
+        exit 1
+    fi
+    
+    # Check if the new branch name already exists
+    if git show-ref --verify --quiet "refs/heads/$NEW_BRANCH_NAME"; then
+        echo "Error: Branch '$NEW_BRANCH_NAME' already exists"
+        exit 1
+    fi
+    
+    echo "Renaming branch '$OLD_BRANCH_NAME' to '$NEW_BRANCH_NAME'..."
+    
+    # Update the mapping file first
+    remove_mapping "$OLD_BRANCH_NAME" "$MAPPING_FILE"
+    save_mapping "$NEW_BRANCH_NAME" "$GEMSTONE_NAME" "$MAPPING_FILE"
+    
+    # Rename the git branch
+    git branch -m "$OLD_BRANCH_NAME" "$NEW_BRANCH_NAME"
+    
+    echo "Successfully renamed branch to '$NEW_BRANCH_NAME' (gemstone: $GEMSTONE_NAME)"
     exit 0
 fi
 
@@ -627,6 +672,7 @@ else
     echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
     echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
     echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt rename <old-branch> <new-branch>           - Rename a branch and update mapping"
     echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
     exit 1
 fi
