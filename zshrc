@@ -45,3 +45,7 @@ alias claude="/Users/pnoble/.claude/local/claude"
 alias python="python3"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.config/scripts:$PATH"
+export PATH="$PATH:/Users/pnoble/tools/vitess/bin"
+
+# bun completions
+[ -s "/Users/pnoble/.bun/_bun" ] && source "/Users/pnoble/.bun/_bun"

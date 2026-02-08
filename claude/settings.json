@@ -1,10 +1,11 @@
 {
-  "feedbackSurveyState": {
-    "lastShownTime": 1753998663594
-  },
-  "model": "sonnet[1m]",
+  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "bash -c 'input=$(cat); cwd=$(echo \"$input\" | jq -r \".workspace.current_dir\"); cd \"$cwd\" 2>/dev/null || cd \"$HOME\"; dir_path=$(pwd); home_dir=\"$HOME\"; if [[ \"$dir_path\" == \"$home_dir\" ]]; then display_path=\"~\"; elif [[ \"$dir_path\" == \"$home_dir\"/* ]]; then display_path=\"~/${dir_path#$home_dir/}\"; else display_path=\"$dir_path\"; fi; IFS=\"/\" read -ra parts <<< \"$display_path\"; if [ ${#parts[@]} -gt 3 ] && [[ \"$display_path\" != \"~\" ]]; then if [[ \"$display_path\" == ~* ]]; then display_path=\"~/.../$(basename \"$(dirname \"$dir_path\")\")/$(basename \"$dir_path\")\"; else display_path=\"/.../$(basename \"$(dirname \"$dir_path\")\")/$(basename \"$dir_path\")\"; fi; fi; git_info=\"\"; if git rev-parse --git-dir > /dev/null 2>&1; then branch=$(git branch --show-current 2>/dev/null); if [ -z \"$branch\" ]; then branch=$(git rev-parse --short HEAD 2>/dev/null); fi; git_status=$(git -c core.useBuiltinFSMonitor=false status --porcelain 2>/dev/null); status_icon=\"\"; if echo \"$git_status\" | grep -q \"^??\"; then status_icon=\"?\"; fi; if echo \"$git_status\" | grep -q \"^ M\\|^M \"; then status_icon=\"${status_icon}!\"; fi; if echo \"$git_status\" | grep -q \"^A \\|^M \"; then status_icon=\"${status_icon}+\"; fi; if [ -z \"$git_status\" ]; then status_icon=\"✓\"; fi; if [ ${#branch} -gt 28 ]; then branch=\"${branch:0:27}.\"; fi; if [ -n \"$status_icon\" ]; then git_info=\" │  $branch $status_icon\"; else git_info=\" │  $branch\"; fi; fi; time_str=$(date +%H:%M); printf \"\\033[2m󰷏 %s%s │ 󰦖 %s\\033[0m\" \"$display_path\" \"$git_info\" \"$time_str\"'"
+  },
+  "alwaysThinkingEnabled": true,
+  "feedbackSurveyState": {
+    "lastShownTime": 1753998663594
   }
 }

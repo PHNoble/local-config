@@ -8,6 +8,7 @@
 #   wt create <branch-name> [base-branch]         - Create new branch and worktree
 #   wt create --existing|-e <existing-branch>     - Create worktree from existing branch
 #   wt root                                       - Open main repo in tmux
+#   wt clean                                      - Sync mapping with actual branch names
 #   wt rename <new-branch>                        - Rename current branch
 #   wt rename <old-branch> <new-branch>           - Rename a specific branch
 #   wt delete <branch-name|gemstone-name>         - Delete worktree and branch
@@ -254,6 +255,59 @@ remove_mapping() {
     fi
 }
 
+# Clean the mapping file to sync with actual branch names
+# Returns the cleaned mapping content via stdout
+# Usage: mapping=$(clean_mapping mapping_file worktree_base)
+clean_mapping() {
+    local mapping_file="$1"
+    local worktree_base="$2"
+    
+    # Check if worktrees exist
+    if [ ! -f "$mapping_file" ] || [ ! -s "$mapping_file" ]; then
+        return 0
+    fi
+    
+    # Create a temporary mapping file
+    local temp_mapping="${mapping_file}.tmp"
+    > "$temp_mapping"
+    
+    # Build the cleaned mapping content
+    local cleaned_content=""
+    
+    # Read each mapping entry and sync with actual branch names
+    while IFS='=' read -r branch gemstone; do
+        if [ -d "$worktree_base/$gemstone" ]; then
+            # Get the actual current branch in this worktree
+            local actual_branch=$(cd "$worktree_base/$gemstone" && git rev-parse --abbrev-ref HEAD 2>/dev/null)
+            
+            local entry=""
+            if [ -z "$actual_branch" ] || [ "$actual_branch" = "HEAD" ]; then
+                # Worktree is in detached HEAD state, keep old mapping
+                entry="$branch=$gemstone"
+            elif [ "$actual_branch" != "$branch" ]; then
+                # Branch has changed, update mapping silently
+                entry="$actual_branch=$gemstone"
+            else
+                # No change needed
+                entry="$branch=$gemstone"
+            fi
+            
+            echo "$entry" >> "$temp_mapping"
+            if [ -z "$cleaned_content" ]; then
+                cleaned_content="$entry"
+            else
+                cleaned_content="${cleaned_content}"$'\n'"$entry"
+            fi
+        fi
+    done < "$mapping_file"
+    
+    # Replace the old mapping file with the new one
+    mv "$temp_mapping" "$mapping_file"
+    
+    # Return the cleaned mapping content
+    echo "$cleaned_content"
+}
+
 # Interactive selection for worktrees using arrow keys
 # Returns the selected index, or exits if cancelled
 # Usage: select_worktree_interactive worktree_base mapping_file
@@ -417,6 +471,7 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
     echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
     echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt clean                                      - Sync mapping with actual branch names"
     echo "  wt rename <new-branch>                        - Rename current branch"
     echo "  wt rename <old-branch> <new-branch>           - Rename a specific branch"
     echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
@@ -429,6 +484,8 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "Worktrees are created in the .worktrees/ subdirectory of your repository"
     echo "using precious gemstone names (diamond, ruby, sapphire, etc.)."
     echo "The mapping between branches and gemstones is tracked automatically."
+    echo ""
+    echo "The 'clean' command is useful when branch stacking causes worktrees to switch branches."
     echo ""
     echo "You can delete worktrees by either branch name or gemstone name:"
     echo "  wt delete feature-login  (by branch name)"
@@ -490,6 +547,9 @@ if [ $# -eq 0 ]; then
         exit 0
     fi
     
+    # Clean the mapping file before showing the interactive list
+    clean_mapping "$MAPPING_FILE" "$WORKTREE_BASE" > /dev/null
+    
     # Get user selection (returns gemstone name)
     GEMSTONE_NAME=$(select_worktree_interactive "$WORKTREE_BASE" "$MAPPING_FILE")
     
@@ -508,6 +568,18 @@ if [ $# -eq 0 ]; then
     # Open in tmux with 3-pane layout
     open_in_tmux "$GEMSTONE_NAME" "$WORKTREE_PATH"
     
+    exit 0
+fi
+
+# Handle clean command
+if [ "$1" = "clean" ]; then
+    if [ ! -f "$MAPPING_FILE" ] || [ ! -s "$MAPPING_FILE" ]; then
+        echo "No worktrees found."
+        exit 0
+    fi
+    
+    clean_mapping "$MAPPING_FILE" "$WORKTREE_BASE" > /dev/null
+    echo "Mapping synced with actual branch names."
     exit 0
 fi
 
@@ -687,6 +759,7 @@ else
     echo "  wt create <branch-name> [base-branch]         - Create new branch and worktree"
     echo "  wt create --existing|-e <existing-branch>     - Create worktree from existing branch"
     echo "  wt root                                       - Open tmux window in main repo"
+    echo "  wt clean                                      - Sync mapping with actual branch names"
     echo "  wt rename <new-branch>                        - Rename current branch"
     echo "  wt rename <old-branch> <new-branch>           - Rename a specific branch"
     echo "  wt delete <branch-name|gemstone-name>         - Delete worktree and branch"
