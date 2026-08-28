@@ -41,11 +41,17 @@ export NVM_DIR="$HOME/.nvm"
 
 export PATH=$HOME/opt/homebrew/Cellar/erlang/27.1.2/lib/erlang/erts-15.1.2/bin:$PATH
 export PATH=$HOME/opt/homebrew/bin:$PATH
-alias claude="/Users/pnoble/.claude/local/claude"
 alias python="python3"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/.config/scripts:$PATH"
 export PATH="$PATH:/Users/pnoble/tools/vitess/bin"
+export PATH="$PATH:$HOME/.cargo/bin"
 
 # bun completions
 [ -s "/Users/pnoble/.bun/_bun" ] && source "/Users/pnoble/.bun/_bun"
+
+
+# clay-base turbo remote cache v2
+export TURBO_CACHE=local:rw,remote:r
+export TURBO_TEAM=clay
+export TURBO_TOKEN=unused

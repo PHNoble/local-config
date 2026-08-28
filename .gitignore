@@ -6,3 +6,4 @@ zed/
 node_modules/
 yarn/
 uv/
+mintlify/

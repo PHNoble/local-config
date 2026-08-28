@@ -7,6 +7,7 @@
 return {
   "AstroNvim/astrocommunity",
   { import = "astrocommunity.pack.lua" },
+  { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.colorscheme.everforest" },
   -- import/override with your plugins folder
 }

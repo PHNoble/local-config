@@ -15,13 +15,13 @@
 	<key>AITermAPI</key>
 	<integer>2</integer>
 	<key>AIVectorStore</key>
-	<integer>1</integer>
+	<integer>0</integer>
 	<key>AiMaxTokens</key>
-	<integer>1000000</integer>
+	<integer>400000</integer>
 	<key>AiModel</key>
-	<string>gpt-4.1</string>
+	<string>gpt-5.1</string>
 	<key>AiResponseMaxTokens</key>
-	<integer>32768</integer>
+	<integer>128000</integer>
 	<key>AitermURL</key>
 	<string>https://api.openai.com/v1/responses</string>
 	<key>AllowClipboardAccess</key>
@@ -1521,6 +1521,8 @@
 			<true/>
 			<key>ASCII Ligatures</key>
 			<false/>
+			<key>Allow modifyOtherKeys</key>
+			<true/>
 			<key>Ambiguous Double Width</key>
 			<false/>
 			<key>Ansi 0 Color</key>
@@ -2100,9 +2102,9 @@
 			<key>Blinking Cursor</key>
 			<false/>
 			<key>Blur</key>
-			<false/>
+			<true/>
 			<key>Blur Radius</key>
-			<real>39.783727678571424</real>
+			<real>8.7180580357142841</real>
 			<key>Bold Color</key>
 			<dict>
 				<key>Alpha Component</key>
@@ -2319,9 +2321,9 @@
 			<key>HotKey Window Animates</key>
 			<true/>
 			<key>HotKey Window AutoHides</key>
-			<true/>
+			<false/>
 			<key>HotKey Window Dock Click Action</key>
-			<integer>0</integer>
+			<integer>2</integer>
 			<key>HotKey Window Floats</key>
 			<true/>
 			<key>HotKey Window Reopens On Activation</key>
@@ -2509,7 +2511,7 @@
 			<key>Tmux Newline</key>
 			<false/>
 			<key>Transparency</key>
-			<real>0.11926897321428558</real>
+			<real>0.117650669642857</real>
 			<key>Unicode Normalization</key>
 			<integer>0</integer>
 			<key>Unlimited Scrollback</key>
