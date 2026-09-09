@@ -1,57 +1,31 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
-
-# Path to your Oh My Zsh installation.
+# oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 export PATH="/opt/homebrew/bin:$PATH"
-
-ZSH_THEME="robbyrussell"
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
+ZSH_THEME="robbyrussell" # prompt is replaced by starship below
 ENABLE_CORRECTION="true"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-plugins=(git wt)
-
+plugins=(git wt zsh-autosuggestions zsh-syntax-highlighting) # syntax-highlighting must be last
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# Preferred editor for local and remote sessions
 if [[ -n $SSH_CONNECTION ]]; then
- export EDITOR='vim'
+    export EDITOR='vim'
 else
- export EDITOR='nvim'
+    export EDITOR='nvim'
 fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch $(uname -m)"
 
 eval "$(starship init zsh)"
 
+# nvm
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-export PATH=$HOME/opt/homebrew/Cellar/erlang/27.1.2/lib/erlang/erts-15.1.2/bin:$PATH
-export PATH=$HOME/opt/homebrew/bin:$PATH
-alias python="python3"
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/.config/scripts:$PATH"
-export PATH="$PATH:/Users/pnoble/tools/vitess/bin"
-export PATH="$PATH:$HOME/.cargo/bin"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
 # bun completions
-[ -s "/Users/pnoble/.bun/_bun" ] && source "/Users/pnoble/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
+# after nvm so ~/.config/scripts and ~/.local/bin win over node bins
+export PATH="$HOME/.config/scripts:$HOME/.local/bin:$PATH:$HOME/.cargo/bin"
+alias python="python3"
+eval "$(pyenv init -)"
 
-# clay-base turbo remote cache v2
-export TURBO_CACHE=local:rw,remote:r
-export TURBO_TEAM=clay
-export TURBO_TOKEN=unused
+# machine-specific / work config (not tracked)
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local

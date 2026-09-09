@@ -1,0 +1,15 @@
+setupVersion: 2
+statusLine:
+  transparent: true
+  sessionAccent: true
+  separator: powerline-thin
+  preset: ascii
+theme:
+  dark: dark-forest
+symbolPreset: nerd
+modelRoles:
+  default: anthropic/claude-fable-5-1:high
+display:
+  shimmer: kitt
+dev:
+  autoqaConsent: denied
