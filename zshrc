@@ -15,7 +15,7 @@ ENABLE_CORRECTION="true"
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
-plugins=(git)
+plugins=(git wt)
 
 source $ZSH/oh-my-zsh.sh
 

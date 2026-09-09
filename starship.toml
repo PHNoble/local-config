@@ -6,6 +6,7 @@ $os\
 $directory\
 $git_branch\
 $git_status\
+${custom.worktree}\
 $fill\
 $nodejs\
 $dotnet\
@@ -68,6 +69,13 @@ untracked = '[$count?](fg:yellow bg:box)'
 deleted = '[$count✘](fg:yellow bg:box)'
 renamed = '[$count»](fg:yellow bg:box)'
 up_to_date = '[ ](fg:green bg:box)'
+
+# Worktree pill: shows the repo name when inside ~/.worktrees/{repo}/{name}
+[custom.worktree]
+when = 'case "$PWD" in "$HOME/.worktrees/"*) exit 0;; *) exit 1;; esac'
+command = 'p="${PWD#$HOME/.worktrees/}"; echo "${p%%/*}"'
+shell = ['sh']
+format = '[─](fg:current_line)[](fg:orange)[ ](fg:primary bg:orange)[](fg:orange bg:box)[ $output](fg:foreground bg:box)[](fg:box)'
 
 
 
