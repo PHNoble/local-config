@@ -80,6 +80,15 @@ if [ ! -f ~/.omp/agent/.env ]; then
     echo "TODO: set ANTHROPIC_API_KEY in ~/.omp/agent/.env"
 fi
 
+step "cursor"
+[ -d /Applications/Cursor.app ] || brew install --cask cursor
+link cursor/settings.json "$HOME/Library/Application Support/Cursor/User/settings.json"
+link cursor/keybindings.json "$HOME/Library/Application Support/Cursor/User/keybindings.json"
+have_ext=$(cursor --list-extensions 2>/dev/null || true)
+while read -r ext; do
+    grep -qiF "$ext" <<<"$have_ext" || cursor --install-extension "$ext"
+done < "$DIR/cursor/extensions.txt"
+
 step "iterm2"
 defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$DIR/iterm"
 defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true

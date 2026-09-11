@@ -1,0 +1,47 @@
+{
+  "security.workspace.trust.untrustedFiles": "open",
+  "workbench.colorTheme": "Andromeda Bordered",
+  "editor.fontFamily": "ComicShannsMono Nerd Font Mono,Menlo, Monaco, 'Courier New', monospace",
+  "editor.fontSize": 14,
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+  },
+  "workbench.editor.wrapTabs": true,
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features",
+  },
+  "[elixir]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.wordBasedSuggestions": "off",
+    "editor.formatOnType": true,
+    "editor.trimAutoWhitespace": false,
+    "editor.snippetSuggestions": "inline",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+  },
+  "tab-groups.gitBranchGroups": "Nothing",
+  "diffEditor.hideUnchangedRegions.enabled": true,
+  "git.autofetch": true,
+  "js/ts.tsserver.maxMemory": 5120,
+  "editor.accessibilitySupport": "off",
+  "remote.SSH.remotePlatform": {
+    "paul@mac-studio": "macOS",
+  },
+  "cursor.general.reduceTransparency": true,
+  "window.autoDetectColorScheme": false,
+  "python.defaultInterpreterPath": "/opt/homebrew/bin/python3.12",
+}

@@ -26,6 +26,7 @@ editing the `Brewfile` or adding files.
 | iTerm2 | `iterm/` via `LoadPrefsFromCustomFolder` | preinstalled |
 | Nerd Font | Comic Shanns Mono | brew cask |
 | claude | `claude/settings.json` -> `~/.claude/settings.json` | - |
+| Cursor | `cursor/{settings,keybindings}.json` -> `~/Library/Application Support/Cursor/User/`; extensions from `cursor/extensions.txt` | brew cask (if missing), `cursor --install-extension` |
 | wt | `scripts/wt`, `zsh/wt` plugin. See `wt_README.md` | - |
 
 ## Not tracked
