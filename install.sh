@@ -82,6 +82,7 @@ fi
 
 step "cursor"
 [ -d /Applications/Cursor.app ] || brew install --cask cursor
+command -v cursor >/dev/null || ln -s /Applications/Cursor.app/Contents/Resources/app/bin/code /opt/homebrew/bin/cursor
 link cursor/settings.json "$HOME/Library/Application Support/Cursor/User/settings.json"
 link cursor/keybindings.json "$HOME/Library/Application Support/Cursor/User/keybindings.json"
 have_ext=$(cursor --list-extensions 2>/dev/null || true)
