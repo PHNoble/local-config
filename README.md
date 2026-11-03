@@ -6,7 +6,7 @@ Personal dotfiles. Clone to `~/.config` and run `./install.sh`.
 git clone git@github.com:PHNoble/local-config.git ~/.config && ~/.config/install.sh
 ```
 
-Assumes macOS with Homebrew and iTerm2 installed. Idempotent: re-run after
+Assumes macOS with Homebrew installed. Idempotent: re-run after
 editing the `Brewfile` or adding files.
 
 ## What it sets up
@@ -23,7 +23,7 @@ editing the `Brewfile` or adding files.
 | python | latest 3.x via pyenv, set as global (first run only) | brew |
 | bun, elixir/erlang, gh, graphite, fzf, ripgrep | `gh/` (read in place) | brew |
 | rust | stable toolchain in `~/.cargo` | rustup installer |
-| iTerm2 | `iterm/` via `LoadPrefsFromCustomFolder` | preinstalled |
+| Ghostty | `ghostty/config.ghostty` (read in place) | brew cask |
 | Nerd Font | Comic Shanns Mono | brew cask |
 | claude | `claude/settings.json` -> `~/.claude/settings.json` | - |
 | Cursor | `cursor/{settings,keybindings}.json` -> `~/Library/Application Support/Cursor/User/`; extensions from `cursor/extensions.txt` | brew cask (if missing), `cursor --install-extension` |
