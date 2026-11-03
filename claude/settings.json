@@ -1,5 +1,5 @@
 {
-  "model": "claude-fable-5[1m]",
+  "model": "fable[1m]",
   "statusLine": {
     "type": "command",
     "command": "bash -c 'input=$(cat); cwd=$(echo \"$input\" | jq -r \".workspace.current_dir\"); cd \"$cwd\" 2>/dev/null || cd \"$HOME\"; dir_path=$(pwd); home_dir=\"$HOME\"; if [[ \"$dir_path\" == \"$home_dir\" ]]; then display_path=\"~\"; elif [[ \"$dir_path\" == \"$home_dir\"/* ]]; then display_path=\"~/${dir_path#$home_dir/}\"; else display_path=\"$dir_path\"; fi; IFS=\"/\" read -ra parts <<< \"$display_path\"; if [ ${#parts[@]} -gt 3 ] && [[ \"$display_path\" != \"~\" ]]; then if [[ \"$display_path\" == ~* ]]; then display_path=\"~/.../$(basename \"$(dirname \"$dir_path\")\")/$(basename \"$dir_path\")\"; else display_path=\"/.../$(basename \"$(dirname \"$dir_path\")\")/$(basename \"$dir_path\")\"; fi; fi; time_str=$(date +%H:%M); printf \"\\033[2m󰷏 %s │ 󰦖 %s\\033[0m\" \"$display_path\" \"$time_str\"'"

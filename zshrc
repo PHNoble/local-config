@@ -29,3 +29,8 @@ eval "$(pyenv init -)"
 
 # machine-specific / work config (not tracked)
 [ -f ~/.zshrc.local ] && source ~/.zshrc.local
+
+# clay-base turbo remote cache v2
+export TURBO_CACHE=local:rw,remote:r
+export TURBO_TEAM=clay
+export TURBO_TOKEN=unused

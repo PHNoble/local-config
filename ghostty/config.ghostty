@@ -1,0 +1,27 @@
+# Toggle terminal from anywhere
+keybind = global:ctrl+alt+cmd+space=toggle_quick_terminal
+
+# Fill the available screen
+quick-terminal-position = top
+quick-terminal-size = 100%,100%
+
+# Keep terminal open if focus changes
+quick-terminal-autohide = false
+
+# Optional: summon on the monitor under your mouse
+quick-terminal-screen = mouse
+
+# Disable quick terminal show/hide animation
+quick-terminal-animation-duration = 0.1
+
+# Font configuration
+font-family = ComicShannsMono Mono
+font-size = 16
+
+# 85% opacity (15% transparent)
+background-opacity = 0.85
+
+# Optional: blur windows behind the terminal
+background-blur = true
+
+background-opacity-cells = false

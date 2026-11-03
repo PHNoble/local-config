@@ -1,6 +1,6 @@
 {
   "security.workspace.trust.untrustedFiles": "open",
-  "workbench.colorTheme": "Andromeda Bordered",
+  "workbench.colorTheme": "Bearded Theme Surprising Watermelon",
   "editor.fontFamily": "ComicShannsMono Nerd Font Mono,Menlo, Monaco, 'Courier New', monospace",
   "editor.fontSize": 14,
   "editor.tabSize": 2,
@@ -36,7 +36,7 @@
   "tab-groups.gitBranchGroups": "Nothing",
   "diffEditor.hideUnchangedRegions.enabled": true,
   "git.autofetch": true,
-  "js/ts.tsserver.maxMemory": 5120,
+  "js/ts.tsserver.maxMemory": 16384,
   "editor.accessibilitySupport": "off",
   "remote.SSH.remotePlatform": {
     "paul@mac-studio": "macOS",

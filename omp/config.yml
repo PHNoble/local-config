@@ -8,7 +8,7 @@ theme:
   dark: dark-forest
 symbolPreset: nerd
 modelRoles:
-  default: anthropic/claude-fable-5-1:high
+  default: anthropic/claude-opus-5-5
 display:
   shimmer: kitt
 dev:

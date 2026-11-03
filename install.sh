@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bootstrap this machine from ~/.config. Idempotent: re-run any time.
-# Assumes macOS with Homebrew and iTerm2 already installed.
+# Assumes macOS with Homebrew already installed.
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -27,7 +27,7 @@ step "dotfile symlinks"
 link zshrc ~/.zshrc
 link tmux.conf ~/.tmux.conf
 link claude/settings.json ~/.claude/settings.json
-# starship.toml, nvim/, git/{config,ignore}, gh/ are read from ~/.config directly.
+# starship.toml, nvim/, git/{config,ignore}, gh/, ghostty/ are read from ~/.config directly.
 
 step "oh-my-zsh"
 if [ ! -d ~/.oh-my-zsh ]; then
@@ -90,9 +90,5 @@ while read -r ext; do
     grep -qiF "$ext" <<<"$have_ext" || cursor --install-extension "$ext"
 done < "$DIR/cursor/extensions.txt"
 
-step "iterm2"
-defaults write com.googlecode.iterm2 PrefsCustomFolder -string "$DIR/iterm"
-defaults write com.googlecode.iterm2 LoadPrefsFromCustomFolder -bool true
-
 step "done"
-echo "Restart iTerm2 to pick up prefs. Then: gh auth login, gt auth."
+echo "Then: gh auth login, gt auth."

@@ -14,4 +14,5 @@ brew "ripgrep" # nvim grep
 brew "gh"
 brew "withgraphite/tap/graphite"
 
-cask "font-comic-shanns-mono-nerd-font" # iterm/starship/tmux glyphs
+cask "ghostty"
+cask "font-comic-shanns-mono-nerd-font" # ghostty/starship/tmux glyphs
